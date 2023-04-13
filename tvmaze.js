@@ -3,6 +3,7 @@
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
+const $episodesBtn = $(".Show-getEpisodes");
 const BASE_TVMAZE_URL = "https://api.tvmaze.com/";
 
 /** Given a search term, search for tv shows that match that query.
@@ -12,7 +13,7 @@ const BASE_TVMAZE_URL = "https://api.tvmaze.com/";
  *    (if no image URL given by API, put in a default image URL)
  */
 
-//TODO: refactor to follow object format defined in docstring (map)
+//[DONE] TODO: refactor to follow object format defined in docstring (map)
 async function getShowsByTerm(term) {
   // ADD: Remove placeholder & make request to TVMaze search shows API.
 
@@ -21,7 +22,7 @@ async function getShowsByTerm(term) {
     params: { q: term },
   });
 
-  const filteredResponse = response.data.map(function (obj) {
+  const filterResponse = response.data.map(function (obj) {
     return {
       id: obj.show.id,
       name: obj.show.name,
@@ -30,7 +31,7 @@ async function getShowsByTerm(term) {
     };
   });
 
-  return filteredResponse;
+  return filterResponse;
 }
 
 /** Given list of shows, create markup for each and append to DOM.
@@ -38,16 +39,17 @@ async function getShowsByTerm(term) {
  * A show is {id, name, summary, image}
  * */
 
-//TODO: refactor with updated show
+//[DONE] TODO: refactor with updated show
 async function displayShows(shows) {
   $showsList.empty();
 
   for (const show of shows) {
-    //TODO: rename variable name
-    let imageURL = show.image;
+    //[DONE] TODO: rename variable name
+    let image = show.image;
+    let imageURL;
 
-    //TODO: update to falsy value
-    if (!imageURL) {
+    //[DONE] TODO: update to falsy value
+    if (!image) {
       imageURL = "https://tinyurl.com/tv-missing";
     } else {
       imageURL = show.image.medium;
@@ -99,8 +101,10 @@ $searchForm.on("submit", async function handleSearchForm(evt) {
  *      { id, name, season, number }
  */
 
-async function getEpisodesOfShow(id) {
-  const episodes = await axios.get(`${BASE_TVMAZE_URL}shows/${id}/episodes`);
+async function getEpisodesOfShow(showId) {
+  const episodes = await axios.get(
+    `${BASE_TVMAZE_URL}shows/${showId}/episodes`
+  );
   let filterEpisodes = episodes.data.map(function (obj) {
     return {
       id: obj.id,
@@ -109,19 +113,20 @@ async function getEpisodesOfShow(id) {
       number: obj.number,
     };
   });
-
+  console.log("filterEpisodes =", filterEpisodes);
   return filterEpisodes;
 }
 
 /** Write a clear docstring for this function... */
 
 function displayEpisodes(episodes) {
-  $("#episodesArea").attr("style", "display: inline"); //TODO: fix display
+  $("#episodesList").empty();
   for (let episode of episodes) {
     let episodeLI = $("<li>").text(`${episode.name} (season ${episode.season},
-    number ${episode.number})`);
+      number ${episode.number})`);
     $("#episodesList").append(episodeLI);
   }
+  $episodesArea.show(); // [DONE]TODO: fix display
 }
 
 async function getEpisodesAndDisplay(showId) {
@@ -130,3 +135,15 @@ async function getEpisodesAndDisplay(showId) {
 }
 
 // add other functions that will be useful / match our structure & design
+
+// $episodesBtn.on("click", async function (evt) {
+//   const showDiv = document.querySelector(".Show");
+//   await getEpisodesAndDisplay(
+//     evt.target.closest("div", showDiv).data("show-id")
+//   );
+// });
+$showsList.on("click", $episodesBtn, async function handleEpsiodeClick(evt) {
+  const showId = Number($(evt.target).closest(".Show").data("show-id"));
+  console.log("showId= ", showId);
+  await getEpisodesAndDisplay(showId);
+});
